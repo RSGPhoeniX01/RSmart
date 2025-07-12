@@ -41,9 +41,9 @@ function SignUp() {
   };
 
   const handleOtpVerified = () => {
-    setOtpVerified(true);
+      setOtpVerified(true);
     setShowOtpModal(false);
-    alert("Email verified successfully! Now you can complete signup.");
+      alert("Email verified successfully! Now you can complete signup.");
   };
 
   const handleOtpCancel = () => {
