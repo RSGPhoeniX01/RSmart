@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import Otp from "./Otp";
 
 function Profile() {
   const [userData, setUserData] = useState(null);
@@ -18,6 +19,8 @@ function Profile() {
     confirmPassword: ""
   });
   const [errors, setErrors] = useState({});
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [pendingEmailUpdate, setPendingEmailUpdate] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -133,13 +136,25 @@ function Profile() {
       return;
     }
 
+    // Check if email is being changed
+    if (formData.email !== userData.email) {
+      setPendingEmailUpdate(formData.email);
+      setShowOtpModal(true);
+      return;
+    }
+
+    // No email change, proceed with normal update
+    await performProfileUpdate();
+  };
+
+  const performProfileUpdate = async () => {
     setIsLoading(true);
 
     try {
       const updateData = {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        email: formData.email,
+        email: pendingEmailUpdate || formData.email,
         mobile: parseInt(formData.mobile),
         oldPassword: currentPassword
       };
@@ -173,7 +188,9 @@ function Profile() {
       setUserData(data.user);
       setIsEditing(false);
       setShowPasswordModal(false);
+      setShowOtpModal(false);
       setCurrentPassword("");
+      setPendingEmailUpdate(null);
       setFormData({
         firstName: data.user.firstName || "",
         lastName: data.user.lastName || "",
@@ -189,6 +206,17 @@ function Profile() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleOtpVerified = () => {
+    setShowOtpModal(false);
+    // Proceed with profile update after email verification
+    performProfileUpdate();
+  };
+
+  const handleOtpCancel = () => {
+    setShowOtpModal(false);
+    setPendingEmailUpdate(null);
   };
 
   const handleEditClick = () => {
@@ -485,6 +513,17 @@ function Profile() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* OTP Modal for Email Verification */}
+      {showOtpModal && (
+        <Otp
+          email={pendingEmailUpdate}
+          onOtpVerified={handleOtpVerified}
+          onCancel={handleOtpCancel}
+          title="Verify New Email"
+          description="Please verify your new email address to complete the update."
+        />
       )}
 
       <Footer />

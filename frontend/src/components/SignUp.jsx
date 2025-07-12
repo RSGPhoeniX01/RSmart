@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import Otp from "./Otp";
 
 function SignUp() {
   const [form, setForm] = useState({
@@ -15,12 +16,8 @@ function SignUp() {
   const [passwordShown, setPasswordShown] = useState(false);
   const [confirmPasswordShown, setConfirmPasswordShown] = useState(false);
   const [isSeller, setIsSeller] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState("");
   const [otpVerified, setOtpVerified] = useState(false);
-  const [emailForOtp, setEmailForOtp] = useState("");
-  const [loadingOtp, setLoadingOtp] = useState(false);
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
   const navigate = useNavigate();
 
   const togglePassword = () => {
@@ -35,62 +32,22 @@ function SignUp() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSendOtp = async () => {
+  const handleSendOtp = () => {
     if (!form.email || !form.firstName || !form.mobile) {
       alert("Please fill in first name, email, and mobile before sending OTP.");
       return;
     }
-    setLoadingOtp(true);
-    try {
-      // Send minimal required fields to backend
-      const res = await fetch("http://localhost:5000/api/user/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: form.firstName,
-          email: form.email,
-          mobile: parseInt(form.mobile),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        alert(typeof data.error === "string" ? data.error : JSON.stringify(data.error || data || "Failed to send OTP"));
-        setLoadingOtp(false);
-        return;
-      }
-      setOtpSent(true);
-      setEmailForOtp(form.email);
-      alert("OTP sent to your email. Please check your inbox.");
-    } catch (err) {
-      alert("Network error while sending OTP");
-    }
-    setLoadingOtp(false);
+    setShowOtpModal(true);
   };
 
-  const handleVerifyOtp = async () => {
-    if (!otp) {
-      alert("Please enter the OTP sent to your email.");
-      return;
-    }
-    setVerifyingOtp(true);
-    try {
-      const res = await fetch("http://localhost:5000/api/user/verify-email-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailForOtp, otp }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        alert(typeof data.error === "string" ? data.error : JSON.stringify(data.error || data || "OTP verification failed"));
-        setVerifyingOtp(false);
-        return;
-      }
-      setOtpVerified(true);
-      alert("Email verified successfully! Now you can complete signup.");
-    } catch (err) {
-      alert("Network error while verifying OTP");
-    }
-    setVerifyingOtp(false);
+  const handleOtpVerified = () => {
+    setOtpVerified(true);
+    setShowOtpModal(false);
+    alert("Email verified successfully! Now you can complete signup.");
+  };
+
+  const handleOtpCancel = () => {
+    setShowOtpModal(false);
   };
 
   const handleSubmit = async (e) => {
@@ -161,7 +118,6 @@ function SignUp() {
           <h2 className="text-2xl font-bold text-cyan-400 mb-2 text-center">
             Sign Up
           </h2>
-          {/* <p className="text-gray-400 text-center mb-6">as</p> */}
 
           {/* Account Type Selection */}
           <div className="mb-4 flex justify-center gap-6">
@@ -279,7 +235,7 @@ function SignUp() {
               required
               autoComplete="on"
               placeholder=" "
-              disabled={otpSent}
+              disabled={otpVerified}
             />
             <label
               htmlFor="email"
@@ -293,35 +249,11 @@ function SignUp() {
               type="button"
               className="py-2 px-3 bg-cyan-400 text-black font-bold rounded hover:bg-cyan-300 transition cursor-pointer text-xs"
               onClick={handleSendOtp}
-              disabled={loadingOtp || otpSent || otpVerified}
+              disabled={otpVerified}
             >
-              {otpVerified ? "Verified" : loadingOtp ? "Sending..." : otpSent ? "OTP Sent" : "Send OTP"}
+              {otpVerified ? "Verified" : "Send OTP"}
             </button>
           </div>
-
-          {/* OTP input and verify button */}
-          {otpSent && !otpVerified && (
-            <div className="relative mb-4 flex items-center gap-2">
-              <input
-                type="text"
-                name="otp"
-                id="otp"
-                value={otp}
-                onChange={e => setOtp(e.target.value)}
-                className="w-full px-4 py-2 rounded bg-gray-900 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                placeholder="Enter OTP"
-                maxLength={6}
-              />
-              <button
-                type="button"
-                className="py-2 px-3 bg-cyan-400 text-black font-bold rounded hover:bg-cyan-300 transition cursor-pointer text-xs"
-                onClick={handleVerifyOtp}
-                disabled={verifyingOtp}
-              >
-                {verifyingOtp ? "Verifying..." : "Verify OTP"}
-              </button>
-            </div>
-          )}
 
           {/* Password */}
           <div className="relative mb-4">
@@ -481,6 +413,18 @@ function SignUp() {
           </div>
         </form>
       </div>
+
+      {/* OTP Modal */}
+      {showOtpModal && (
+        <Otp
+          email={form.email}
+          onOtpVerified={handleOtpVerified}
+          onCancel={handleOtpCancel}
+          title="Verify Email for Signup"
+          description="Please verify your email address to complete your registration."
+        />
+      )}
+
       <Footer />
     </div>
   );
