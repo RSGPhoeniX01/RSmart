@@ -91,7 +91,7 @@ function Otp({ email, onOtpVerified, onCancel, title = "Verify Email", descripti
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-transparent bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md mx-4">
         <h3 className="text-xl font-bold text-cyan-400 mb-4">{title}</h3>
         <p className="text-gray-300 mb-4">{description}</p>

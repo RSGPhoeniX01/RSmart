@@ -83,11 +83,43 @@ function SignUp() {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(
-          typeof data.error === "string"
-            ? data.error
-            : JSON.stringify(data.error || data || "Signup failed")
-        );
+        let errorMessage = "Signup failed";
+        
+        if (typeof data.error === "string") {
+          errorMessage = data.error;
+        } else if (Array.isArray(data.error)) {
+          // Handle validation errors from backend
+          errorMessage = data.error.map(err => {
+            if (err.message) {
+              // Map common validation errors to user-friendly messages
+              if (err.message.includes("Email already exists")) {
+                return "This email address is already registered";
+              }
+              if (err.message.includes("Mobile number")) {
+                return "This mobile number is already registered";
+              }
+              if (err.message.includes("firstName")) {
+                return "First name is required and must be at least 3 characters";
+              }
+              if (err.message.includes("password")) {
+                return "Password must be at least 8 characters with uppercase, lowercase, digit, and special character";
+              }
+              return err.message;
+            }
+            return err;
+          }).join(", ");
+        } else if (data.error && typeof data.error === "object") {
+          // Handle object-based errors
+          if (data.error.email) {
+            errorMessage = `Email: ${data.error.email}`;
+          } else if (data.error.mobile) {
+            errorMessage = `Mobile: ${data.error.mobile}`;
+          } else {
+            errorMessage = Object.values(data.error).join(", ");
+          }
+        }
+        
+        alert(errorMessage);
         return;
       }
       // Store token and user in localStorage (optional, for frontend state)

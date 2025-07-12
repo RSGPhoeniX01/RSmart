@@ -101,6 +101,11 @@ const register = async (req, res) => {
         if (existingUser) {
             return res.status(400).json({ error: "Email already exists" });
         }
+        // Check if mobile number already exists
+        const existingMobile = await User.findOne({ mobile: validatedData.mobile });
+        if (existingMobile) {
+            return res.status(400).json({ error: "Mobile number already exists" });
+        }
         // Check if OTP was verified (no OTP doc should exist for this email)
         const otpDoc = await Otp.findOne({ email: validatedData.email });
         if (otpDoc) {
@@ -134,6 +139,19 @@ const register = async (req, res) => {
         if (error instanceof z.ZodError) {
             return res.status(400).json({ error: error.errors });
         }
+        
+        // Handle MongoDB duplicate key errors
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyPattern)[0];
+            if (field === 'email') {
+                return res.status(400).json({ error: "Email already exists" });
+            } else if (field === 'mobile') {
+                return res.status(400).json({ error: "Mobile number already exists" });
+            } else {
+                return res.status(400).json({ error: `${field} already exists` });
+            }
+        }
+        
         console.error("Error registering user:", error);
         res.status(500).json({ error: "Internal server error" });
     }
