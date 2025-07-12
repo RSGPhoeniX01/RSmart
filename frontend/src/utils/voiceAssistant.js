@@ -46,11 +46,11 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
       const productName = cmd.replace("add", "").replace("in my cart", "").replace("to cart", "").trim();
       try {
         // Get all items first
-        const searchRes = await fetch(`http://localhost:5000/api/items/allitems`);
+        const searchRes = await fetch(`http://localhost:5000/api/cart`);
         const searchData = await searchRes.json();
         
         if (!searchData.items || searchData.items.length === 0) {
-          speak("No products available.");
+          speak("No products  at this time are  available.");
           return;
         }
         
