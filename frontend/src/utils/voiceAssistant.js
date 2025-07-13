@@ -1,4 +1,3 @@
-// utils/voiceAssistant.js
 export function createVoiceAssistant({ navigate, speakFunction, userToken, setListening }) {
   const synth = window.speechSynthesis;
 
@@ -16,6 +15,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
         voices[0]
       );
     };
+
     const utter = new SpeechSynthesisUtterance(message);
     utter.lang = "en-US";
     utter.voice = getFemaleVoice();
@@ -28,8 +28,10 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
       speakFunction(message);
     }
   };
+
   const handleCommand = async (text) => {
     const cmd = text.toLowerCase();
+
     if (cmd.includes("home")) {
       speak("Opening home page");
       navigate("/");
@@ -42,104 +44,109 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
     } else if (cmd.includes("profile")) {
       speak("Opening profile");
       navigate("/profile");
-    } else if (cmd.startsWith("add") && (cmd.includes("in my cart") || cmd.includes("to cart"))) {
-      const productName = cmd.replace("add", "").replace("in my cart", "").replace("to cart", "").trim();
-      try {
-        // Get all items first
-        const searchRes = await fetch(`http://localhost:5000/api/cart`);
-        const searchData = await searchRes.json();
-        
-        if (!searchData.items || searchData.items.length === 0) {
-          speak("No products  at this time are  available.");
-          return;
-        }
-        
-        // Find the best match by comparing lowercase names
-        const searchTerm = productName.toLowerCase();
-        console.log("Searching for:", searchTerm);
-        
-        // First try exact match
-        let bestMatch = searchData.items.find(item => 
-          item.name.toLowerCase() === searchTerm
-        );
-        
-        // If no exact match, try partial match
-        if (!bestMatch) {
-          bestMatch = searchData.items.find(item => 
-            item.name.toLowerCase().includes(searchTerm) || 
-            searchTerm.includes(item.name.toLowerCase())
-          );
-        }
-        
-        // If still no match, try word-by-word matching
-        if (!bestMatch) {
-          const searchWords = searchTerm.split(' ').filter(word => word.length > 2);
-          bestMatch = searchData.items.find(item => {
-            const itemName = item.name.toLowerCase();
-            return searchWords.some(word => itemName.includes(word));
-          });
-        }
-        
-        console.log("Best match:", bestMatch);
-        
-        if (!bestMatch) {
-          speak(`${productName} is not available.`);
-          return;
-        }
-        
-        const product = bestMatch;
-        
-        // Now add the item to cart using the item ID
-        const cartRes = await fetch("http://localhost:5000/api/cart/add", {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            ...(userToken ? { Authorization: `Bearer ${userToken}` } : {})
-          },
-          body: JSON.stringify({ itemId: product._id, quantity: 1 })
-        });
-        
-        if (cartRes.ok) {
-          speak(`${product.name} has been added to your cart.`);
-          window.dispatchEvent(new Event("cartUpdated"));
-        } else {
-          speak("Failed to add the product to cart.");
-        }
-      } catch (err) {
-        console.error(err);
-        speak("Something went wrong while adding the product.");
-      }
-    } else if (cmd.startsWith("add") && cmd.includes("in my wishlist")) {
+    }
+
+    // Add to cart
+   else if (cmd.startsWith("add") && (cmd.includes("in my cart") || cmd.includes("to cart"))) {
+  const productName = cmd
+    .replace(/^add\s+/i, "") // Remove "add"
+    .replace(/\s+in my cart$/i, "") // Remove "in my cart"
+    .replace(/\s+to cart$/i, "") // Remove "to cart"
+    .trim();
+
+  try {
+    const searchRes = await fetch("http://localhost:5000/api/item/allitems"); // ✅ Correct endpoint
+    const searchData = await searchRes.json();
+
+    const items = searchData.items || [];
+
+    if (items.length === 0) {
+      speak("No products are available at this time.");
+      return;
+    }
+
+    const searchTerm = productName.toLowerCase();
+    console.log("🟡 Searching for:", searchTerm);
+
+    // Step 1: Exact match
+    let bestMatch = items.find(item =>
+      item.name.toLowerCase() === searchTerm
+    );
+
+    // Step 2: Partial match
+    if (!bestMatch) {
+      bestMatch = items.find(item =>
+        item.name.toLowerCase().includes(searchTerm) ||
+        searchTerm.includes(item.name.toLowerCase())
+      );
+    }
+
+    // Step 3: Word-level match
+    if (!bestMatch) {
+      const searchWords = searchTerm.split(' ').filter(word => word.length > 2);
+      bestMatch = items.find(item => {
+        const itemName = item.name.toLowerCase();
+        return searchWords.some(word => itemName.includes(word));
+      });
+    }
+
+    console.log("🟢 Best match found:", bestMatch);
+
+    if (!bestMatch) {
+      speak(`${productName} is not available.`);
+      return;
+    }
+
+    const product = bestMatch;
+
+    const cartRes = await fetch("http://localhost:5000/api/cart/add", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(userToken ? { Authorization: `Bearer ${userToken}` } : {})
+      },
+      body: JSON.stringify({
+        itemId: product._id, // ✅ Use _id (not product.id)
+        quantity: 1
+      })
+    });
+
+    if (cartRes.ok) {
+      speak(`${product.name} has been added to your cart.`);
+      window.dispatchEvent(new Event("cartUpdated"));
+    } else {
+      speak("Failed to add the product to  to to cart.");
+    }
+  } catch (err) {
+    console.error("❌ Error:", err);
+    speak("Something went wrong while adding the product.");
+  }
+}
+
+    // Add to wishlist
+    else if (cmd.startsWith("add") && cmd.includes("in my wishlist")) {
       const productName = cmd.replace("add", "").replace("in my wishlist", "").trim();
       try {
-        // Get all items first
-        const searchRes = await fetch(`http://localhost:5000/api/item/allitems`);
+        const searchRes = await fetch("http://localhost:5000/api/item/allitems");
         const searchData = await searchRes.json();
-        
+
         if (!searchData.items || searchData.items.length === 0) {
           speak("No products available.");
           return;
         }
-        
-        // Find the best match by comparing lowercase names
+
         const searchTerm = productName.toLowerCase();
         console.log("Searching for wishlist:", searchTerm);
-        
-        // First try exact match
-        let bestMatch = searchData.items.find(item => 
-          item.name.toLowerCase() === searchTerm
-        );
-        
-        // If no exact match, try partial match
+
+        let bestMatch = searchData.items.find(item => item.name.toLowerCase() === searchTerm);
+
         if (!bestMatch) {
-          bestMatch = searchData.items.find(item => 
-            item.name.toLowerCase().includes(searchTerm) || 
-            searchTerm.includes(item.name.toLowerCase())
+          bestMatch = searchData.items.find(item =>
+            item.name.toLowerCase().includes(searchTerm) || searchTerm.includes(item.name.toLowerCase())
           );
         }
-        
-        // If still no match, try word-by-word matching
+
         if (!bestMatch) {
           const searchWords = searchTerm.split(' ').filter(word => word.length > 2);
           bestMatch = searchData.items.find(item => {
@@ -147,17 +154,16 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
             return searchWords.some(word => itemName.includes(word));
           });
         }
-        
+
         console.log("Best match for wishlist:", bestMatch);
-        
+
         if (!bestMatch) {
           speak(`${productName} is not available.`);
           return;
         }
-        
+
         const product = bestMatch;
-        
-        // Add to wishlist using the toggle endpoint
+
         const wishlistRes = await fetch("http://localhost:5000/api/user/wishlist/toggle", {
           method: "POST",
           credentials: "include",
@@ -167,7 +173,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
           },
           body: JSON.stringify({ itemId: product._id })
         });
-        
+
         if (wishlistRes.ok) {
           speak(`${product.name} has been added to your wishlist.`);
           window.dispatchEvent(new Event("wishlistUpdated"));
@@ -178,29 +184,37 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
         console.error(err);
         speak("Something went wrong while adding to wishlist.");
       }
-    } else {
+    }
+
+    else {
       speak("Sorry, I did not understand.");
     }
   };
+
   const startListening = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       speak("Speech recognition is not supported in your browser.");
       return;
     }
+
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
+
     recognition.onstart = () => setListening?.(true);
     recognition.onend = () => setListening?.(false);
+
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
       console.log("🗣️ Voice Input:", transcript);
       handleCommand(transcript);
     };
+
     recognition.start();
   };
+
   return {
     speak,
     start: startListening,
