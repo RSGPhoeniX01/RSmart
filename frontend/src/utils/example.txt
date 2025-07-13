@@ -1,9 +1,17 @@
+"refresh"
+
+"reload"
+
 "Add Samsung S24 Ultra to cart"
 
 "Add iPhone 16 in my cart"
+
+"remove samsung from my cart"
 
 "Add Himalaya Facewash to cart"
 
 "open wishlist"
 
 " add  Himalaya Facewash in my wishlist"
+
+"remove Himalaya Facewash from my wishlisht"

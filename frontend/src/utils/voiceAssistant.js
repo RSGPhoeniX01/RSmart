@@ -44,6 +44,9 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
     } else if (cmd.includes("profile")) {
       speak("Opening profile");
       navigate("/profile");
+    } else if (cmd.includes("refresh") || cmd.includes("reload")) {
+      speak("Refreshing the page");
+      window.location.reload();
     }
 
     // Add to cart
@@ -126,6 +129,87 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
     speak("Something went wrong while adding the product.");
   }
 }
+
+    // Remove from cart
+    else if (cmd.startsWith("remove") && cmd.includes("from my cart")) {
+      const productName = cmd.replace("remove", "").replace("from my cart", "").trim();
+      try {
+        const searchRes = await fetch("http://localhost:5000/api/item/allitems");
+        const searchData = await searchRes.json();
+
+        if (!searchData.items || searchData.items.length === 0) {
+          speak("No products available.");
+          return;
+        }
+
+        // Sort items by name length (shorter names first) for better matching
+        const sortedItems = searchData.items.sort((a, b) => a.name.length - b.name.length);
+
+        const searchTerm = productName.toLowerCase();
+        console.log("Searching for cart removal:", searchTerm);
+
+        let bestMatch = sortedItems.find(item => item.name.toLowerCase() === searchTerm);
+
+        if (!bestMatch) {
+          bestMatch = sortedItems.find(item =>
+            item.name.toLowerCase().includes(searchTerm) || searchTerm.includes(item.name.toLowerCase())
+          );
+        }
+
+        if (!bestMatch) {
+          const searchWords = searchTerm.split(' ').filter(word => word.length > 2);
+          bestMatch = sortedItems.find(item => {
+            const itemName = item.name.toLowerCase();
+            return searchWords.some(word => itemName.includes(word));
+          });
+        }
+
+        console.log("Best match for cart removal:", bestMatch);
+
+        if (!bestMatch) {
+          speak(`${productName} is not available.`);
+          return;
+        }
+
+        const product = bestMatch;
+
+        // Check if product is in cart before removing
+        const cartCheckRes = await fetch("http://localhost:5000/api/cart", {
+          credentials: "include",
+          headers: {
+            ...(userToken ? { Authorization: `Bearer ${userToken}` } : {})
+          }
+        });
+
+        if (cartCheckRes.ok) {
+          const cartData = await cartCheckRes.json();
+          const isInCart = cartData.cart.items.some(item => item.itemId._id === product._id);
+          
+          if (!isInCart) {
+            speak(`${product.name} is not in your cart.`);
+            return;
+          }
+        }
+
+        const cartRes = await fetch(`http://localhost:5000/api/cart/remove/${product._id}`, {
+          method: "DELETE",
+          credentials: "include",
+          headers: {
+            ...(userToken ? { Authorization: `Bearer ${userToken}` } : {})
+          }
+        });
+
+        if (cartRes.ok) {
+          speak(`${product.name} has been removed from your cart.`);
+          window.dispatchEvent(new Event("cartUpdated"));
+        } else {
+          speak("Failed to remove the product from cart.");
+        }
+      } catch (err) {
+        console.error(err);
+        speak("Something went wrong while removing from cart.");
+      }
+    }
 
     // Add to wishlist
     else if (cmd.startsWith("add") && cmd.includes("in my wishlist")) {
