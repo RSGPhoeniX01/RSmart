@@ -107,7 +107,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
         ...(userToken ? { Authorization: `Bearer ${userToken}` } : {})
       },
       body: JSON.stringify({
-        itemId: product._id, // ✅ Use _id (not product.id)
+        itemId: product.id, // ✅ Use _id (not product.id)
         quantity: 1
       })
     });
