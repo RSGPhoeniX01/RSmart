@@ -64,22 +64,14 @@ function Navbar() {
     voiceAssistantRef.current = createVoiceAssistant({
       navigate,
       setListening,
+      setSpokenText, // <--- This is correctly passed to the voice assistant
       userToken: userData?.token, // Pass token if needed
     });
-  }, [navigate, userData?.token]);
+  }, [navigate, userData?.token, setSpokenText]); // Added setSpokenText to dependencies
 
   const handleMicClick = () => {
     if (voiceAssistantRef.current) {
       voiceAssistantRef.current.start();
-      // Periodically update spoken text while listening
-      const interval = setInterval(() => {
-        if (listening) {
-          setSpokenText(voiceAssistantRef.current.getSpokenText());
-        } else {
-          clearInterval(interval);
-          setSpokenText(""); // Clear text when not listening
-        }
-      }, 200); // Update every 200ms
     }
   };
 
@@ -128,12 +120,11 @@ function Navbar() {
       <div className="flex items-center gap-4">
         {isLoggedIn && userData && !userData.isSeller && (
           // Group for text area and microphone button
-          <div className="flex items-center gap-3"> {/* Added gap-3 for spacing */}
+          <div className="flex items-center gap-3">
             <textarea
-              value={listening ? spokenText : ""} // Display spokenText only when listening
+              value={spokenText} // <--- This correctly displays spokenText
               readOnly
               placeholder={listening ? "Speak now..." : "Voice command input"}
-              // Increased width (w-80) and height (h-12), and added 'resize-none'
               className={`w-80 h-12 p-2 text-white bg-gray-700 border border-gray-600 rounded-lg resize-none focus:outline-none ${
                 listening ? "border-cyan-400" : ""
               }`}

@@ -1,4 +1,6 @@
-export function createVoiceAssistant({ navigate, speakFunction, userToken, setListening }) {
+export function createVoiceAssistant({ navigate, speakFunction, userToken, setListening, setSpokenText }) {
+  // Ensure setSpokenText is included in the destructuring
+
   const synth = window.speechSynthesis;
 
   const speak = (message) => {
@@ -50,85 +52,85 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
     }
 
     // Add to cart
-   else if (cmd.startsWith("add") && (cmd.includes("in my cart") || cmd.includes("to cart"))) {
-  const productName = cmd
-    .replace(/^add\s+/i, "") // Remove "add"
-    .replace(/\s+in my cart$/i, "") // Remove "in my cart"
-    .replace(/\s+to cart$/i, "") // Remove "to cart"
-    .trim();
+    else if (cmd.startsWith("add") && (cmd.includes("in my cart") || cmd.includes("to cart"))) {
+      const productName = cmd
+        .replace(/^add\s+/i, "")
+        .replace(/\s+in my cart$/i, "")
+        .replace(/\s+to cart$/i, "")
+        .trim();
 
-  try {
-    const searchRes = await fetch("http://localhost:5000/api/item/allitems"); // ✅ Correct endpoint
-    const searchData = await searchRes.json();
+      try {
+        const searchRes = await fetch("http://localhost:5000/api/item/allitems"); // ✅ Correct endpoint
+        const searchData = await searchRes.json();
 
-    const items = searchData.items || [];
+        const items = searchData.items || [];
 
-    if (items.length === 0) {
-      speak("No products are available at this time.");
-      return;
+        if (items.length === 0) {
+          speak("No products are available at this time.");
+          return;
+        }
+
+        // Sort items by name length (shorter names first) for better matching
+        const sortedItems = items.sort((a, b) => a.name.length - b.name.length);
+
+        const searchTerm = productName.toLowerCase();
+        console.log("🟡 Searching for:", searchTerm);
+
+        // Step 1: Exact match
+        let bestMatch = sortedItems.find(item =>
+          item.name.toLowerCase() === searchTerm
+        );
+
+        // Step 2: Partial match
+        if (!bestMatch) {
+          bestMatch = sortedItems.find(item =>
+            item.name.toLowerCase().includes(searchTerm) ||
+            searchTerm.includes(item.name.toLowerCase())
+          );
+        }
+
+        // Step 3: Word-level match
+        if (!bestMatch) {
+          const searchWords = searchTerm.split(' ').filter(word => word.length > 2);
+          bestMatch = sortedItems.find(item => {
+            const itemName = item.name.toLowerCase();
+            return searchWords.some(word => itemName.includes(word));
+          });
+        }
+
+        console.log("🟢 Best match found:", bestMatch);
+
+        if (!bestMatch) {
+          speak(`${productName} is not available.`);
+          return;
+        }
+
+        const product = bestMatch;
+
+        const cartRes = await fetch("http://localhost:5000/api/cart/add", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            ...(userToken ? { Authorization: `Bearer ${userToken}` } : {})
+          },
+          body: JSON.stringify({
+            itemId: product._id, // ✅ Use _id (not product.id)
+            quantity: 1
+          })
+        });
+
+        if (cartRes.ok) {
+          speak(`${product.name} has been added to your cart.`);
+          window.dispatchEvent(new Event("cartUpdated"));
+        } else {
+          speak("Failed to add the product to cart.");
+        }
+      } catch (err) {
+        console.error("❌ Error:", err);
+        speak("Something went wrong while adding the product.");
+      }
     }
-
-    // Sort items by name length (shorter names first) for better matching
-    const sortedItems = items.sort((a, b) => a.name.length - b.name.length);
-
-    const searchTerm = productName.toLowerCase();
-    console.log("🟡 Searching for:", searchTerm);
-
-    // Step 1: Exact match
-    let bestMatch = sortedItems.find(item =>
-      item.name.toLowerCase() === searchTerm
-    );
-
-    // Step 2: Partial match
-    if (!bestMatch) {
-      bestMatch = sortedItems.find(item =>
-        item.name.toLowerCase().includes(searchTerm) ||
-        searchTerm.includes(item.name.toLowerCase())
-      );
-    }
-
-    // Step 3: Word-level match
-    if (!bestMatch) {
-      const searchWords = searchTerm.split(' ').filter(word => word.length > 2);
-      bestMatch = sortedItems.find(item => {
-        const itemName = item.name.toLowerCase();
-        return searchWords.some(word => itemName.includes(word));
-      });
-    }
-
-    console.log("🟢 Best match found:", bestMatch);
-
-    if (!bestMatch) {
-      speak(`${productName} is not available.`);
-      return;
-    }
-
-    const product = bestMatch;
-
-    const cartRes = await fetch("http://localhost:5000/api/cart/add", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        ...(userToken ? { Authorization: `Bearer ${userToken}` } : {})
-      },
-      body: JSON.stringify({
-        itemId: product._id, // ✅ Use _id (not product.id)
-        quantity: 1
-      })
-    });
-
-    if (cartRes.ok) {
-      speak(`${product.name} has been added to your cart.`);
-      window.dispatchEvent(new Event("cartUpdated"));
-    } else {
-      speak("Failed to add the product to  to to cart.");
-    }
-  } catch (err) {
-    console.error("❌ Error:", err);
-    speak("Something went wrong while adding the product.");
-  }
-}
 
     // Remove from cart
     else if (cmd.startsWith("remove") && cmd.includes("from my cart")) {
@@ -184,7 +186,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
         if (cartCheckRes.ok) {
           const cartData = await cartCheckRes.json();
           const isInCart = cartData.cart.items.some(item => item.itemId._id === product._id);
-          
+
           if (!isInCart) {
             speak(`${product.name} is not in your cart.`);
             return;
@@ -265,7 +267,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
         if (wishlistCheckRes.ok) {
           const wishlistData = await wishlistCheckRes.json();
           const isAlreadyInWishlist = wishlistData.wishlist.some(item => item._id === product._id);
-          
+
           if (isAlreadyInWishlist) {
             speak(`${product.name} is already in your wishlist.`);
             return;
@@ -348,7 +350,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
         if (wishlistCheckRes.ok) {
           const wishlistData = await wishlistCheckRes.json();
           const isInWishlist = wishlistData.wishlist.some(item => item._id === product._id);
-          
+
           if (!isInWishlist) {
             speak(`${product.name} is not in your wishlist.`);
             return;
@@ -382,6 +384,8 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
     }
   };
 
+  const recognitionRef = {}; // Use a ref to store the recognition instance
+
   const startListening = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -389,18 +393,65 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+    // Stop any existing recognition instance before starting a new one
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
 
-    recognition.onstart = () => setListening?.(true);
-    recognition.onend = () => setListening?.(false);
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition; // Store the instance in the ref
+
+    recognition.lang = "en-US";
+    // Set to true to get interim (partial) results as the user speaks
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+    // Set to true to allow continuous listening for multiple phrases
+    recognition.continuous = true;
+
+    recognition.onstart = () => {
+      setListening?.(true);
+      setSpokenText(""); // Clear text when starting a new session
+      console.log("Speech recognition started.");
+    };
+
+    recognition.onend = () => {
+      setListening?.(false);
+      // You can decide if you want to clear the text immediately on end,
+      // or let the last recognized phrase linger for a moment.
+      // If you clear it here, consider a slight delay if you want the user to read the final command.
+      // For now, it will be cleared when `setListening` becomes false in Navbar's useEffect.
+      console.log("Speech recognition ended.");
+    };
 
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      console.log("🗣️ Voice Input:", transcript);
-      handleCommand(transcript);
+      let interimTranscript = '';
+      let finalTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      // Update spoken text with interim results for real-time display
+      // If there's a final transcript, prioritize it, otherwise show interim
+      setSpokenText(finalTranscript || interimTranscript); // <--- This is the key line for real-time display
+
+      if (finalTranscript) {
+        console.log("🗣️ Final Voice Input:", finalTranscript);
+        handleCommand(finalTranscript); // Only execute command on final result
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error:", event.error);
+      setListening?.(false);
+      // Display error message in the text area for user feedback
+      setSpokenText(`Error: ${event.error}`);
+      speak(`Error during speech recognition: ${event.error}`);
     };
 
     recognition.start();
