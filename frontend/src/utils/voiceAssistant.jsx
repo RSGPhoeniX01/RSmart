@@ -1,5 +1,4 @@
 export function createVoiceAssistant({ navigate, speakFunction, userToken, setListening, setSpokenText }) {
-  // Ensure setSpokenText is included in the destructuring
 
   const synth = window.speechSynthesis;
 
@@ -37,10 +36,10 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
     if (cmd.includes("home")) {
       speak("Opening home page");
       navigate("/");
-    } else if (cmd.includes(" open cart")) {
+    } else if (cmd.includes("open cart") || cmd.includes("open card")) {
       speak("Opening cart");
       navigate("/cart");
-    } else if (cmd.includes("open wishlist")) {
+    } else if (cmd.includes("open wishlist") || cmd.includes("open wish list")) {
       speak("Opening wishlist");
       navigate("/wishlist");
     } else if (cmd.includes("profile")) {
@@ -51,13 +50,79 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
       window.location.reload();
     }
 
-    // Add to cart
-    else if (cmd.startsWith("add") && (cmd.includes("in my cart") || cmd.includes("to cart"))) {
-      const productName = cmd
-        .replace(/^add\s+/i, "")
-        .replace(/\s+in my cart$/i, "")
-        .replace(/\s+to cart$/i, "")
+    // Show all items from a specific category
+    else if (cmd.startsWith("show all")) {
+      const categoryName = cmd
+        .replace(/^show all\s+/i, "")
         .trim();
+
+      // Check if user wants to show all categories
+      if (categoryName.toLowerCase() === "categories") {
+        if (window.setCategoryFilter) {
+          window.setCategoryFilter(""); // Clear category filter to show all
+          speak("Showing all categories");
+        } else {
+          speak("Please navigate to the home page to view all categories");
+        }
+        return;
+      }
+
+      // Available categories in lowercase for easier matching
+      const availableCategories = [
+        'electronics', 'fashion', 'home', 'sports', 
+        'books', 'beauty', 'toys', 'health'
+      ];
+
+      // Find the best matching category
+      const searchTerm = categoryName.toLowerCase();
+      let bestMatch = availableCategories.find(cat => 
+        cat === searchTerm
+      );
+
+      if (!bestMatch) {
+        bestMatch = availableCategories.find(cat =>
+          cat.includes(searchTerm) ||
+          searchTerm.includes(cat)
+        );
+      }
+
+      if (!bestMatch) {
+        speak(`${categoryName} category is not available. Available categories are: ${availableCategories.join(', ')}`);
+        return;
+      }
+
+      // Convert back to proper case for the filter
+      const categoryMap = {
+        'electronics': 'Electronics',
+        'fashion': 'Fashion', 
+        'home': 'Home',
+        'sports': 'Sports',
+        'books': 'Books',
+        'beauty': 'Beauty',
+        'toys': 'Toys',
+        'health': 'Health'
+      };
+
+      const properCategory = categoryMap[bestMatch];
+
+      // Set the category filter using the global function
+      if (window.setCategoryFilter) {
+        window.setCategoryFilter(properCategory);
+        speak(`Showing all ${properCategory} items`);
+      } else {
+        speak("Please navigate to the home page to filter by category");
+      }
+    }
+
+    // Add to cart
+    else if (cmd.startsWith("add") && (cmd.includes("in my cart") || cmd.includes("to cart") || cmd.includes("in my card") || cmd.includes("to card"))) {
+              const productName = cmd
+          .replace(/^add\s+/i, "")
+          .replace(/\s+in my cart$/i, "")
+          .replace(/\s+to cart$/i, "")
+          .replace(/\s+in my card$/i, "")
+          .replace(/\s+to card$/i, "")
+          .trim();
 
       try {
         const searchRes = await fetch("http://localhost:5000/api/item/allitems"); // ✅ Correct endpoint
@@ -74,7 +139,6 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
         const sortedItems = items.sort((a, b) => a.name.length - b.name.length);
 
         const searchTerm = productName.toLowerCase();
-        console.log("🟡 Searching for:", searchTerm);
 
         // Step 1: Exact match
         let bestMatch = sortedItems.find(item =>
@@ -97,8 +161,6 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
             return searchWords.some(word => itemName.includes(word));
           });
         }
-
-        console.log("🟢 Best match found:", bestMatch);
 
         if (!bestMatch) {
           speak(`${productName} is not available.`);
@@ -133,8 +195,8 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
     }
 
     // Remove from cart
-    else if (cmd.startsWith("remove") && cmd.includes("from my cart")) {
-      const productName = cmd.replace("remove", "").replace("from my cart", "").trim();
+    else if (cmd.startsWith("remove") && (cmd.includes("from my cart") || cmd.includes("from my card"))) {
+      const productName = cmd.replace("remove", "").replace("from my cart", "").replace("from my card", "").trim();
       try {
         const searchRes = await fetch("http://localhost:5000/api/item/allitems");
         const searchData = await searchRes.json();
@@ -148,7 +210,6 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
         const sortedItems = searchData.items.sort((a, b) => a.name.length - b.name.length);
 
         const searchTerm = productName.toLowerCase();
-        console.log("Searching for cart removal:", searchTerm);
 
         let bestMatch = sortedItems.find(item => item.name.toLowerCase() === searchTerm);
 
@@ -165,8 +226,6 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
             return searchWords.some(word => itemName.includes(word));
           });
         }
-
-        console.log("Best match for cart removal:", bestMatch);
 
         if (!bestMatch) {
           speak(`${productName} is not available.`);
@@ -214,8 +273,8 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
     }
 
     // Add to wishlist
-    else if (cmd.startsWith("add") && cmd.includes("in my wishlist")) {
-      const productName = cmd.replace("add", "").replace("in my wishlist", "").trim();
+    else if (cmd.startsWith("add") && (cmd.includes("in my wishlist") || cmd.includes("in my wish list"))) {
+      const productName = cmd.replace("add", "").replace("in my wishlist", "").replace("in my wish list", "").trim();
       try {
         const searchRes = await fetch("http://localhost:5000/api/item/allitems");
         const searchData = await searchRes.json();
@@ -229,7 +288,6 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
         const sortedItems = searchData.items.sort((a, b) => a.name.length - b.name.length);
 
         const searchTerm = productName.toLowerCase();
-        console.log("Searching for wishlist:", searchTerm);
 
         let bestMatch = sortedItems.find(item => item.name.toLowerCase() === searchTerm);
 
@@ -246,8 +304,6 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
             return searchWords.some(word => itemName.includes(word));
           });
         }
-
-        console.log("Best match for wishlist:", bestMatch);
 
         if (!bestMatch) {
           speak(`${productName} is not available.`);
@@ -297,8 +353,8 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
     }
 
     // Remove from wishlist
-    else if (cmd.startsWith("remove") && cmd.includes("from my wishlist")) {
-      const productName = cmd.replace("remove", "").replace("from my wishlist", "").trim();
+    else if (cmd.startsWith("remove") && (cmd.includes("from my wishlist") || cmd.includes("from my wish list"))) {
+      const productName = cmd.replace("remove", "").replace("from my wishlist", "").replace("from my wish list", "").trim();
       try {
         const searchRes = await fetch("http://localhost:5000/api/item/allitems");
         const searchData = await searchRes.json();
@@ -312,7 +368,6 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
         const sortedItems = searchData.items.sort((a, b) => a.name.length - b.name.length);
 
         const searchTerm = productName.toLowerCase();
-        console.log("Searching for wishlist removal:", searchTerm);
 
         let bestMatch = sortedItems.find(item => item.name.toLowerCase() === searchTerm);
 
@@ -329,8 +384,6 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
             return searchWords.some(word => itemName.includes(word));
           });
         }
-
-        console.log("Best match for wishlist removal:", bestMatch);
 
         if (!bestMatch) {
           speak(`${productName} is not available.`);
@@ -385,6 +438,8 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
   };
 
   const recognitionRef = {}; // Use a ref to store the recognition instance
+  let lastProcessedCommand = ''; // Track last processed command to avoid duplicates
+  let processingTimeout = null; // Timeout for processing debounce
 
   const startListening = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -411,22 +466,17 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
     recognition.onstart = () => {
       setListening?.(true);
       setSpokenText(""); // Clear text when starting a new session
-      console.log("Speech recognition started.");
     };
 
     recognition.onend = () => {
       setListening?.(false);
-      // You can decide if you want to clear the text immediately on end,
-      // or let the last recognized phrase linger for a moment.
-      // If you clear it here, consider a slight delay if you want the user to read the final command.
-      // For now, it will be cleared when `setListening` becomes false in Navbar's useEffect.
-      console.log("Speech recognition ended.");
     };
 
     recognition.onresult = (event) => {
       let interimTranscript = '';
       let finalTranscript = '';
 
+      // Process only the latest results to avoid accumulation issues
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
@@ -437,19 +487,44 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
       }
 
       // Update spoken text with interim results for real-time display
-      // If there's a final transcript, prioritize it, otherwise show interim
-      setSpokenText(finalTranscript || interimTranscript); // <--- This is the key line for real-time display
+      setSpokenText(finalTranscript || interimTranscript);
 
-      if (finalTranscript) {
-        console.log("🗣️ Final Voice Input:", finalTranscript);
-        handleCommand(finalTranscript); // Only execute command on final result
+      // Only process final transcripts and ensure they're not empty
+      if (finalTranscript && finalTranscript.trim()) {
+        const command = finalTranscript.trim();
+        
+        // Prevent duplicate command processing
+        if (command === lastProcessedCommand) {
+          return;
+        }
+        
+        // Clear any existing processing timeout
+        if (processingTimeout) {
+          clearTimeout(processingTimeout);
+        }
+        
+        // Set a small delay to prevent rapid-fire commands
+        processingTimeout = setTimeout(() => {
+          // Clear the spoken text briefly to show command processing
+          setSpokenText("");
+          
+          // Process the command
+          handleCommand(command);
+          
+          // Update last processed command
+          lastProcessedCommand = command;
+          
+          // Clear spoken text after a short delay to prepare for next command
+          setTimeout(() => {
+            setSpokenText("");
+            lastProcessedCommand = ''; // Reset after delay to allow same command again
+          }, 1000);
+        }, 200);
       }
     };
 
     recognition.onerror = (event) => {
-      console.error("Speech recognition error:", event.error);
       setListening?.(false);
-      // Display error message in the text area for user feedback
       setSpokenText(`Error: ${event.error}`);
       speak(`Error during speech recognition: ${event.error}`);
     };
@@ -460,5 +535,12 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
   return {
     speak,
     start: startListening,
+    stop: () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        // Clear the ref to prevent auto-restart when manually stopped
+        recognitionRef.current = null;
+      }
+    },
   };
 }

@@ -15,3 +15,5 @@
 " add  Himalaya Facewash in my wishlist"
 
 "remove Himalaya Facewash from my wishlisht"
+
+"show all product_category"

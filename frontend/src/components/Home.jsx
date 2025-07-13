@@ -148,7 +148,7 @@ function Home() {
             setWishlist(data.wishlist.map(item => item._id));
         }
     } catch (err) {
-        console.error("Error updating wishlist:", err);
+        alert('Error updating wishlist');
     }
   };
 
@@ -167,7 +167,7 @@ function Home() {
             alert(`Error: ${data.error}`);
         }
     } catch (err) {
-        console.error("Error adding to cart:", err);
+        alert('Error adding to cart');
     }
   };
 
@@ -180,16 +180,28 @@ function Home() {
             body: JSON.stringify({ itemId, quantity }),
         });
         if (res.ok) {
-            // On successful add to cart, redirect to the cart page
             navigate('/cart');
         } else {
             const data = await res.json();
             alert(`Error: ${data.error}`);
         }
     } catch (err) {
-        console.error("Error in Buy Now flow:", err);
+        alert('Error in Buy Now flow');
     }
   };
+
+  // Function to set category filter from voice assistant
+  const setCategoryFilter = (category) => {
+    setFilters(prev => ({ ...prev, category }));
+  };
+
+  // Expose the function globally for voice assistant
+  useEffect(() => {
+    window.setCategoryFilter = setCategoryFilter;
+    return () => {
+      delete window.setCategoryFilter;
+    };
+  }, []);
 
   return (
     <div>

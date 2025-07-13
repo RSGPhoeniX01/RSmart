@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "../logo/RSmart.png";
-import { FaHeart, FaShoppingCart, FaMicrophone } from "react-icons/fa";
+import { FaHeart, FaShoppingCart, FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
 import { createVoiceAssistant } from "../utils/voiceAssistant";
 
 function Navbar() {
@@ -64,14 +64,18 @@ function Navbar() {
     voiceAssistantRef.current = createVoiceAssistant({
       navigate,
       setListening,
-      setSpokenText, // <--- This is correctly passed to the voice assistant
-      userToken: userData?.token, // Pass token if needed
+      setSpokenText,
+      userToken: userData?.token,
     });
-  }, [navigate, userData?.token, setSpokenText]); // Added setSpokenText to dependencies
+  }, [navigate, userData?.token, setSpokenText]);
 
   const handleMicClick = () => {
     if (voiceAssistantRef.current) {
-      voiceAssistantRef.current.start();
+      if (listening) {
+        voiceAssistantRef.current.stop();
+      } else {
+        voiceAssistantRef.current.start();
+      }
     }
   };
 
@@ -122,7 +126,7 @@ function Navbar() {
           // Group for text area and microphone button
           <div className="flex items-center gap-3">
             <textarea
-              value={spokenText} // <--- This correctly displays spokenText
+              value={spokenText}
               readOnly
               placeholder={listening ? "Speak now..." : "Voice command input"}
               className={`w-80 h-12 p-2 text-white bg-gray-700 border border-gray-600 rounded-lg resize-none focus:outline-none ${
@@ -134,9 +138,9 @@ function Navbar() {
               className={`text-white p-2 rounded-full hover:bg-white/10 hover:text-cyan-400 ${
                 listening ? "animate-pulse text-cyan-400" : ""
               }`}
-              title="Start Voice Command"
+              title={listening ? "Stop Voice Command" : "Start Voice Command"}
             >
-              <FaMicrophone size={24} />
+              {listening ? <FaMicrophone size={24} /> : <FaMicrophoneSlash size={24} />}
             </button>
           </div>
         )}
