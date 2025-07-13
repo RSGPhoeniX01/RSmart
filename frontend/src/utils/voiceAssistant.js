@@ -65,17 +65,20 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
       return;
     }
 
+    // Sort items by name length (shorter names first) for better matching
+    const sortedItems = items.sort((a, b) => a.name.length - b.name.length);
+
     const searchTerm = productName.toLowerCase();
     console.log("🟡 Searching for:", searchTerm);
 
     // Step 1: Exact match
-    let bestMatch = items.find(item =>
+    let bestMatch = sortedItems.find(item =>
       item.name.toLowerCase() === searchTerm
     );
 
     // Step 2: Partial match
     if (!bestMatch) {
-      bestMatch = items.find(item =>
+      bestMatch = sortedItems.find(item =>
         item.name.toLowerCase().includes(searchTerm) ||
         searchTerm.includes(item.name.toLowerCase())
       );
@@ -84,7 +87,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
     // Step 3: Word-level match
     if (!bestMatch) {
       const searchWords = searchTerm.split(' ').filter(word => word.length > 2);
-      bestMatch = items.find(item => {
+      bestMatch = sortedItems.find(item => {
         const itemName = item.name.toLowerCase();
         return searchWords.some(word => itemName.includes(word));
       });
@@ -136,20 +139,23 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
           return;
         }
 
+        // Sort items by name length (shorter names first) for better matching
+        const sortedItems = searchData.items.sort((a, b) => a.name.length - b.name.length);
+
         const searchTerm = productName.toLowerCase();
         console.log("Searching for wishlist:", searchTerm);
 
-        let bestMatch = searchData.items.find(item => item.name.toLowerCase() === searchTerm);
+        let bestMatch = sortedItems.find(item => item.name.toLowerCase() === searchTerm);
 
         if (!bestMatch) {
-          bestMatch = searchData.items.find(item =>
+          bestMatch = sortedItems.find(item =>
             item.name.toLowerCase().includes(searchTerm) || searchTerm.includes(item.name.toLowerCase())
           );
         }
 
         if (!bestMatch) {
           const searchWords = searchTerm.split(' ').filter(word => word.length > 2);
-          bestMatch = searchData.items.find(item => {
+          bestMatch = sortedItems.find(item => {
             const itemName = item.name.toLowerCase();
             return searchWords.some(word => itemName.includes(word));
           });
@@ -216,20 +222,23 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
           return;
         }
 
+        // Sort items by name length (shorter names first) for better matching
+        const sortedItems = searchData.items.sort((a, b) => a.name.length - b.name.length);
+
         const searchTerm = productName.toLowerCase();
         console.log("Searching for wishlist removal:", searchTerm);
 
-        let bestMatch = searchData.items.find(item => item.name.toLowerCase() === searchTerm);
+        let bestMatch = sortedItems.find(item => item.name.toLowerCase() === searchTerm);
 
         if (!bestMatch) {
-          bestMatch = searchData.items.find(item =>
+          bestMatch = sortedItems.find(item =>
             item.name.toLowerCase().includes(searchTerm) || searchTerm.includes(item.name.toLowerCase())
           );
         }
 
         if (!bestMatch) {
           const searchWords = searchTerm.split(' ').filter(word => word.length > 2);
-          bestMatch = searchData.items.find(item => {
+          bestMatch = sortedItems.find(item => {
             const itemName = item.name.toLowerCase();
             return searchWords.some(word => itemName.includes(word));
           });
