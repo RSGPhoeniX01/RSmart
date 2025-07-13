@@ -164,6 +164,24 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
 
         const product = bestMatch;
 
+        // Check if product is already in wishlist
+        const wishlistCheckRes = await fetch("http://localhost:5000/api/user/wishlist", {
+          credentials: "include",
+          headers: {
+            ...(userToken ? { Authorization: `Bearer ${userToken}` } : {})
+          }
+        });
+
+        if (wishlistCheckRes.ok) {
+          const wishlistData = await wishlistCheckRes.json();
+          const isAlreadyInWishlist = wishlistData.wishlist.some(item => item._id === product._id);
+          
+          if (isAlreadyInWishlist) {
+            speak(`${product.name} is already in your wishlist.`);
+            return;
+          }
+        }
+
         const wishlistRes = await fetch("http://localhost:5000/api/user/wishlist/toggle", {
           method: "POST",
           credentials: "include",
@@ -183,6 +201,86 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
       } catch (err) {
         console.error(err);
         speak("Something went wrong while adding to wishlist.");
+      }
+    }
+
+    // Remove from wishlist
+    else if (cmd.startsWith("remove") && cmd.includes("from my wishlist")) {
+      const productName = cmd.replace("remove", "").replace("from my wishlist", "").trim();
+      try {
+        const searchRes = await fetch("http://localhost:5000/api/item/allitems");
+        const searchData = await searchRes.json();
+
+        if (!searchData.items || searchData.items.length === 0) {
+          speak("No products available.");
+          return;
+        }
+
+        const searchTerm = productName.toLowerCase();
+        console.log("Searching for wishlist removal:", searchTerm);
+
+        let bestMatch = searchData.items.find(item => item.name.toLowerCase() === searchTerm);
+
+        if (!bestMatch) {
+          bestMatch = searchData.items.find(item =>
+            item.name.toLowerCase().includes(searchTerm) || searchTerm.includes(item.name.toLowerCase())
+          );
+        }
+
+        if (!bestMatch) {
+          const searchWords = searchTerm.split(' ').filter(word => word.length > 2);
+          bestMatch = searchData.items.find(item => {
+            const itemName = item.name.toLowerCase();
+            return searchWords.some(word => itemName.includes(word));
+          });
+        }
+
+        console.log("Best match for wishlist removal:", bestMatch);
+
+        if (!bestMatch) {
+          speak(`${productName} is not available.`);
+          return;
+        }
+
+        const product = bestMatch;
+
+        // Check if product is in wishlist before removing
+        const wishlistCheckRes = await fetch("http://localhost:5000/api/user/wishlist", {
+          credentials: "include",
+          headers: {
+            ...(userToken ? { Authorization: `Bearer ${userToken}` } : {})
+          }
+        });
+
+        if (wishlistCheckRes.ok) {
+          const wishlistData = await wishlistCheckRes.json();
+          const isInWishlist = wishlistData.wishlist.some(item => item._id === product._id);
+          
+          if (!isInWishlist) {
+            speak(`${product.name} is not in your wishlist.`);
+            return;
+          }
+        }
+
+        const wishlistRes = await fetch("http://localhost:5000/api/user/wishlist/toggle", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            ...(userToken ? { Authorization: `Bearer ${userToken}` } : {})
+          },
+          body: JSON.stringify({ itemId: product._id })
+        });
+
+        if (wishlistRes.ok) {
+          speak(`${product.name} has been removed from your wishlist.`);
+          window.dispatchEvent(new Event("wishlistUpdated"));
+        } else {
+          speak("Failed to remove the product from wishlist.");
+        }
+      } catch (err) {
+        console.error(err);
+        speak("Something went wrong while removing from wishlist.");
       }
     }
 
