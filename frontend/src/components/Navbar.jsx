@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "../logo/RSmart.png";
 import { FaHeart, FaShoppingCart, FaMicrophone } from "react-icons/fa";
@@ -9,8 +9,12 @@ function Navbar() {
   const [userData, setUserData] = useState(null);
   const [cartCount, setCartCount] = useState(0);
   const [listening, setListening] = useState(false);
+  const [spokenText, setSpokenText] = useState(""); // State to hold the spoken text
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Using useRef to store the voiceAssistant instance across renders
+  const voiceAssistantRef = useRef(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -55,15 +59,36 @@ function Navbar() {
     };
   }, [location.pathname]);
 
-  // Voice Assistant
-  const voiceAssistant = createVoiceAssistant({
-  navigate,
-  setListening,
-  userToken: null, // pass token if needed
-});
+  // Initialize voice assistant once and store in ref
+  useEffect(() => {
+    voiceAssistantRef.current = createVoiceAssistant({
+      navigate,
+      setListening,
+      userToken: userData?.token, // Pass token if needed
+    });
+  }, [navigate, userData?.token]);
 
-  // const handleMicClick = () => voiceAssistant.start();
-  const handleMicClick = () => voiceAssistant.start(); // changed from startListening()
+  const handleMicClick = () => {
+    if (voiceAssistantRef.current) {
+      voiceAssistantRef.current.start();
+      // Periodically update spoken text while listening
+      const interval = setInterval(() => {
+        if (listening) {
+          setSpokenText(voiceAssistantRef.current.getSpokenText());
+        } else {
+          clearInterval(interval);
+          setSpokenText(""); // Clear text when not listening
+        }
+      }, 200); // Update every 200ms
+    }
+  };
+
+  useEffect(() => {
+    // Clear spoken text when listening stops
+    if (!listening) {
+      setSpokenText("");
+    }
+  }, [listening]);
 
   const handleProfileClick = () => navigate("/profile");
   const isHomePage = location.pathname === "/";
@@ -71,10 +96,60 @@ function Navbar() {
 
   return (
     <header className="flex items-center justify-between py-4">
-      <Link to="/" className="flex items-center gap-1">
-        <img src={logo} alt="RSmart Logo" className="h-15 w-20" />
-      </Link>
+      {/* Left section: Logo, Cart, and Wishlist */}
       <div className="flex items-center gap-4">
+        <Link to="/" className="flex items-center gap-1">
+          <img src={logo} alt="RSmart Logo" className="h-15 w-20" />
+        </Link>
+        {isLoggedIn && userData && !userData.isSeller && (
+          <>
+            <Link
+              to="/cart"
+              className="relative text-white p-2 rounded-full hover:bg-white/10 hover:text-cyan-400"
+            >
+              <FaShoppingCart size={24} />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+            <Link
+              to="/wishlist"
+              className="text-white p-2 rounded-full hover:bg-white/10 hover:text-cyan-400"
+            >
+              <FaHeart size={24} />
+            </Link>
+          </>
+        )}
+      </div>
+
+      {/* Right section: Spoken text area, Microphone, and Login/Profile/Home */}
+      <div className="flex items-center gap-4">
+        {isLoggedIn && userData && !userData.isSeller && (
+          // Group for text area and microphone button
+          <div className="flex items-center gap-3"> {/* Added gap-3 for spacing */}
+            <textarea
+              value={listening ? spokenText : ""} // Display spokenText only when listening
+              readOnly
+              placeholder={listening ? "Speak now..." : "Voice command input"}
+              // Increased width (w-80) and height (h-12), and added 'resize-none'
+              className={`w-80 h-12 p-2 text-white bg-gray-700 border border-gray-600 rounded-lg resize-none focus:outline-none ${
+                listening ? "border-cyan-400" : ""
+              }`}
+            />
+            <button
+              onClick={handleMicClick}
+              className={`text-white p-2 rounded-full hover:bg-white/10 hover:text-cyan-400 ${
+                listening ? "animate-pulse text-cyan-400" : ""
+              }`}
+              title="Start Voice Command"
+            >
+              <FaMicrophone size={24} />
+            </button>
+          </div>
+        )}
+
         {isAuthPage ? (
           <Link
             to="/"
@@ -83,66 +158,35 @@ function Navbar() {
             Home
           </Link>
         ) : (
-          <>
-            {isLoggedIn && userData && !userData.isSeller && (
-              <>
-                <Link
-                  to="/wishlist"
-                  className="text-white p-2 rounded-full hover:bg-white/10 hover:text-cyan-400"
-                >
-                  <FaHeart size={24} />
-                </Link>
-                <Link
-                  to="/cart"
-                  className="relative text-white p-2 rounded-full hover:bg-white/10 hover:text-cyan-400"
-                >
-                  <FaShoppingCart size={24} />
-                  {cartCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {cartCount}
-                    </span>
-                  )}
-                </Link>
+          <div>
+            {isLoggedIn && userData ? (
+              isHomePage ? (
                 <button
-                  onClick={handleMicClick}
-                  className={`text-white p-2 rounded-full hover:bg-white/10 hover:text-cyan-400 ${
-                    listening ? "animate-pulse text-cyan-400" : ""
-                  }`}
-                  title="Start Voice Command"
+                  onClick={handleProfileClick}
+                  className="text-white px-4 py-2 border border-white rounded-lg font-semibold hover:bg-black hover:text-cyan-400"
                 >
-                  <FaMicrophone size={24} />
+                  Profile
                 </button>
-              </>
-            )}
-            <div>
-              {isLoggedIn && userData ? (
-                isHomePage ? (
-                  <button
-                    onClick={handleProfileClick}
-                    className="text-white px-4 py-2 border border-white rounded-lg font-semibold hover:bg-black hover:text-cyan-400"
-                  >
-                    Profile
-                  </button>
-                ) : (
-                  <Link
-                    to="/"
-                    className="text-white px-4 py-2 border border-white rounded-lg font-semibold hover:bg-black hover:text-cyan-400"
-                  >
-                    Home
-                  </Link>
-                )
               ) : (
-                isHomePage && !isAuthPage && (
-                  <Link
-                    to="/login"
-                    className="text-white px-4 py-2 border border-white rounded-lg font-semibold hover:bg-black hover:text-cyan-400"
-                  >
-                    Login / Register
-                  </Link>
-                )
-              )}
-            </div>
-          </>
+                <Link
+                  to="/"
+                  className="text-white px-4 py-2 border border-white rounded-lg font-semibold hover:bg-black hover:text-cyan-400"
+                >
+                  Home
+                </Link>
+              )
+            ) : (
+              isHomePage &&
+              !isAuthPage && (
+                <Link
+                  to="/login"
+                  className="text-white px-4 py-2 border border-white rounded-lg font-semibold hover:bg-black hover:text-cyan-400"
+                >
+                  Login / Register
+                </Link>
+              )
+            )}
+          </div>
         )}
       </div>
     </header>
