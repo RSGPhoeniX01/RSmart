@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Otp from "./Otp";
+import { BACKEND_BASE_URL } from "../utils/api";
 
 function Profile() {
   const [userData, setUserData] = useState(null);
@@ -26,7 +27,7 @@ function Profile() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/user/me", {
+        const res = await fetch(`${BACKEND_BASE_URL}/api/user/me`, {
           credentials: "include",
         });
 
@@ -57,7 +58,7 @@ function Profile() {
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:5000/api/user/signout", {
+      await fetch(`${BACKEND_BASE_URL}/api/user/signout`, {
         method: "POST",
         credentials: "include",
       });
@@ -164,7 +165,7 @@ function Profile() {
         updateData.password = formData.password;
       }
 
-      const res = await fetch(`http://localhost:5000/api/user/${userData._id}/update`, {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/user/${userData._id}/update`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

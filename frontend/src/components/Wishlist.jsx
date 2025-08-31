@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { FaTrash, FaShoppingCart } from "react-icons/fa";
+import { BACKEND_BASE_URL } from "../utils/api";
 
 function Wishlist() {
     const [wishlist, setWishlist] = useState([]);
@@ -13,7 +14,7 @@ function Wishlist() {
     const fetchWishlist = async () => {
         try {
             setLoading(true);
-            const res = await fetch("http://localhost:5000/api/user/wishlist", { credentials: 'include' });
+            const res = await fetch(`${BACKEND_BASE_URL}/api/user/wishlist`, { credentials: 'include' });
             if (res.ok) {
                 const data = await res.json();
                 setWishlist(data.wishlist);
@@ -33,7 +34,7 @@ function Wishlist() {
 
     const handleRemove = async (itemId) => {
         try {
-            await fetch('http://localhost:5000/api/user/wishlist/toggle', {
+            await fetch(`${BACKEND_BASE_URL}/api/user/wishlist/toggle`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -47,7 +48,7 @@ function Wishlist() {
 
     const handleMoveToCart = async (itemId) => {
         try {
-            await fetch('http://localhost:5000/api/cart/add', {
+            await fetch(`${BACKEND_BASE_URL}/api/cart/add`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',

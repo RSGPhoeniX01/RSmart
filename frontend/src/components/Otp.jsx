@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { BACKEND_BASE_URL } from "../utils/api";
 
 function Otp({ email, onOtpVerified, onCancel, title = "Verify Email", description = "Please verify your email address." }) {
   const [otp, setOtp] = useState("");
@@ -31,7 +32,7 @@ function Otp({ email, onOtpVerified, onCancel, title = "Verify Email", descripti
     setTimer(30);
     
     try {
-      const res = await fetch("http://localhost:5000/api/user/signup", {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/user/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -68,7 +69,7 @@ function Otp({ email, onOtpVerified, onCancel, title = "Verify Email", descripti
     setOtpError("");
     
     try {
-      const res = await fetch("http://localhost:5000/api/user/verify-email-otp", {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/user/verify-email-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp }),

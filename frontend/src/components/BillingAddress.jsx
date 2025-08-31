@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
+import { BACKEND_BASE_URL } from "../utils/api";
 
 const loadScript = (src) => {
     return new Promise((resolve) => {
@@ -54,7 +55,7 @@ function BillingAddress() {
         }
         
         try {
-            const orderRes = await fetch('http://localhost:5000/api/payment/create-order', {
+            const orderRes = await fetch(`${BACKEND_BASE_URL}/api/payment/create-order`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -64,10 +65,10 @@ function BillingAddress() {
 
             const { order } = orderData;
 
-            const keyRes = await fetch('http://localhost:5000/api/payment/get-key', { credentials: 'include' });
+            const keyRes = await fetch(`${BACKEND_BASE_URL}/api/payment/get-key`, { credentials: 'include' });
             const { key } = await keyRes.json();
             
-            const userRes = await fetch('http://localhost:5000/api/user/me', { credentials: 'include' });
+            const userRes = await fetch(`${BACKEND_BASE_URL}/api/user/me`, { credentials: 'include' });
             const userData = userRes.ok ? (await userRes.json()).user : {};
 
             const options = {
@@ -79,7 +80,7 @@ function BillingAddress() {
                 order_id: order.id,
                 handler: async function (response) {
                     setLoading(true);
-                    const verifyRes = await fetch('http://localhost:5000/api/payment/verify-payment', {
+                    const verifyRes = await fetch(`${BACKEND_BASE_URL}/api/payment/verify-payment`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
@@ -92,7 +93,7 @@ function BillingAddress() {
                     const verifyData = await verifyRes.json();
                     if (verifyRes.ok) {
                         alert('Purchase successful!');
-                        navigate('/profile');
+                        navigate('/purchase-history');
                     } else {
                         throw new Error(verifyData.error || 'Payment verification failed');
                     }

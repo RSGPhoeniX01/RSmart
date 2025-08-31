@@ -4,6 +4,7 @@ import Footer from "./Footer";
 import ItemModal from "./ItemModal";
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { BACKEND_BASE_URL } from "../utils/api";
 
 function Home() {
   const sliderRef = useRef(null);
@@ -28,7 +29,7 @@ function Home() {
     // Fetch user data
     const fetchUserData = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/user/me", {
+        const res = await fetch(`${BACKEND_BASE_URL}/api/user/me`, {
           credentials: "include",
         });
         if (res.ok) {
@@ -47,7 +48,7 @@ function Home() {
     // Fetch categories from backend
     const fetchCategories = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/item/categories");
+        const res = await fetch(`${BACKEND_BASE_URL}/api/item/categories`);
         if (!res.ok) throw new Error("Failed to fetch categories");
         const data = await res.json();
         setCategories(data.categories);
@@ -65,7 +66,7 @@ function Home() {
       if (userData?.isSeller) return; // Don't fetch wishlist for sellers
       
       try {
-        const res = await fetch("http://localhost:5000/api/user/wishlist", { credentials: 'include' });
+        const res = await fetch(`${BACKEND_BASE_URL}/api/user/wishlist`, { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           setWishlist(data.wishlist.map(item => item._id));
@@ -88,7 +89,7 @@ function Home() {
         if (filters.maxPrice) queryParams.append('maxPrice', parseFloat(filters.maxPrice));
         if (filters.search) queryParams.append('search', filters.search);
 
-        const res = await fetch(`http://localhost:5000/api/item/allitems?${queryParams}`);
+        const res = await fetch(`${BACKEND_BASE_URL}/api/item/allitems?${queryParams}`);
         if (!res.ok) {
           const errorData = await res.json();
           throw new Error(errorData.error || "Failed to fetch products");
@@ -137,7 +138,7 @@ function Home() {
 
   const handleToggleWishlist = async (itemId) => {
     try {
-        const res = await fetch('http://localhost:5000/api/user/wishlist/toggle', {
+        const res = await fetch(`${BACKEND_BASE_URL}/api/user/wishlist/toggle`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -154,7 +155,7 @@ function Home() {
 
   const handleAddToCart = async (itemId, quantity) => {
     try {
-        const res = await fetch('http://localhost:5000/api/cart/add', {
+        const res = await fetch(`${BACKEND_BASE_URL}/api/cart/add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -173,7 +174,7 @@ function Home() {
 
   const handleBuyNow = async (itemId, quantity) => {
     try {
-        const res = await fetch('http://localhost:5000/api/cart/add', {
+        const res = await fetch(`${BACKEND_BASE_URL}/api/cart/add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',

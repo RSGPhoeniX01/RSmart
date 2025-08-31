@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import { BACKEND_BASE_URL } from "../utils/api";
 
 function AddItem() {
   const [form, setForm] = useState({
@@ -53,7 +54,7 @@ function AddItem() {
       formData.append("count", form.count);
       if (form.image) formData.append("image", form.image);
 
-      const res = await fetch("http://localhost:5000/api/item/create", {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/item/create`, {
         method: "POST",
         credentials: "include",
         body: formData,

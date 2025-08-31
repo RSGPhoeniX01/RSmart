@@ -1,3 +1,5 @@
+import { BACKEND_BASE_URL } from "./api";
+
 export function createVoiceAssistant({ navigate, speakFunction, userToken, setListening, setSpokenText }) {
 
   const synth = window.speechSynthesis;
@@ -125,7 +127,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
           .trim();
 
       try {
-        const searchRes = await fetch("http://localhost:5000/api/item/allitems"); // ✅ Correct endpoint
+        const searchRes = await fetch(`${BACKEND_BASE_URL}/api/item/allitems`); // ✅ Correct endpoint
         const searchData = await searchRes.json();
 
         const items = searchData.items || [];
@@ -169,7 +171,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
 
         const product = bestMatch;
 
-        const cartRes = await fetch("http://localhost:5000/api/cart/add", {
+        const cartRes = await fetch(`${BACKEND_BASE_URL}/api/cart/add`, {
           method: "POST",
           credentials: "include",
           headers: {
@@ -198,7 +200,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
     else if (cmd.startsWith("remove") && (cmd.includes("from my cart") || cmd.includes("from my card"))) {
       const productName = cmd.replace("remove", "").replace("from my cart", "").replace("from my card", "").trim();
       try {
-        const searchRes = await fetch("http://localhost:5000/api/item/allitems");
+        const searchRes = await fetch(`${BACKEND_BASE_URL}/api/item/allitems`);
         const searchData = await searchRes.json();
 
         if (!searchData.items || searchData.items.length === 0) {
@@ -235,7 +237,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
         const product = bestMatch;
 
         // Check if product is in cart before removing
-        const cartCheckRes = await fetch("http://localhost:5000/api/cart", {
+        const cartCheckRes = await fetch(`${BACKEND_BASE_URL}/api/cart`, {
           credentials: "include",
           headers: {
             ...(userToken ? { Authorization: `Bearer ${userToken}` } : {})
@@ -252,7 +254,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
           }
         }
 
-        const cartRes = await fetch(`http://localhost:5000/api/cart/remove/${product._id}`, {
+        const cartRes = await fetch(`${BACKEND_BASE_URL}/api/cart/remove/${product._id}`, {
           method: "DELETE",
           credentials: "include",
           headers: {
@@ -276,7 +278,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
     else if (cmd.startsWith("add") && (cmd.includes("in my wishlist") || cmd.includes("in my wish list"))) {
       const productName = cmd.replace("add", "").replace("in my wishlist", "").replace("in my wish list", "").trim();
       try {
-        const searchRes = await fetch("http://localhost:5000/api/item/allitems");
+        const searchRes = await fetch(`${BACKEND_BASE_URL}/api/item/allitems`);
         const searchData = await searchRes.json();
 
         if (!searchData.items || searchData.items.length === 0) {
@@ -313,7 +315,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
         const product = bestMatch;
 
         // Check if product is already in wishlist
-        const wishlistCheckRes = await fetch("http://localhost:5000/api/user/wishlist", {
+        const wishlistCheckRes = await fetch(`${BACKEND_BASE_URL}/api/user/wishlist`, {
           credentials: "include",
           headers: {
             ...(userToken ? { Authorization: `Bearer ${userToken}` } : {})
@@ -330,7 +332,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
           }
         }
 
-        const wishlistRes = await fetch("http://localhost:5000/api/user/wishlist/toggle", {
+        const wishlistRes = await fetch(`${BACKEND_BASE_URL}/api/user/wishlist/toggle`, {
           method: "POST",
           credentials: "include",
           headers: {
@@ -356,7 +358,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
     else if (cmd.startsWith("remove") && (cmd.includes("from my wishlist") || cmd.includes("from my wish list"))) {
       const productName = cmd.replace("remove", "").replace("from my wishlist", "").replace("from my wish list", "").trim();
       try {
-        const searchRes = await fetch("http://localhost:5000/api/item/allitems");
+        const searchRes = await fetch(`${BACKEND_BASE_URL}/api/item/allitems`);
         const searchData = await searchRes.json();
 
         if (!searchData.items || searchData.items.length === 0) {
@@ -393,7 +395,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
         const product = bestMatch;
 
         // Check if product is in wishlist before removing
-        const wishlistCheckRes = await fetch("http://localhost:5000/api/user/wishlist", {
+        const wishlistCheckRes = await fetch(`${BACKEND_BASE_URL}/api/user/wishlist`, {
           credentials: "include",
           headers: {
             ...(userToken ? { Authorization: `Bearer ${userToken}` } : {})
@@ -410,7 +412,7 @@ export function createVoiceAssistant({ navigate, speakFunction, userToken, setLi
           }
         }
 
-        const wishlistRes = await fetch("http://localhost:5000/api/user/wishlist/toggle", {
+        const wishlistRes = await fetch(`${BACKEND_BASE_URL}/api/user/wishlist/toggle`, {
           method: "POST",
           credentials: "include",
           headers: {

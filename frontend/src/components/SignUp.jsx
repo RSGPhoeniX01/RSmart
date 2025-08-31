@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Otp from "./Otp";
+import { BACKEND_BASE_URL } from "../utils/api";
 
 function SignUp() {
   const [form, setForm] = useState({
@@ -75,7 +76,7 @@ function SignUp() {
       isSeller: isSeller
     };
     try {
-      const res = await fetch("http://localhost:5000/api/user/register", {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/user/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),

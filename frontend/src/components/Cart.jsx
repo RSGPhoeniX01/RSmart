@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import { FaTrash } from 'react-icons/fa';
+import { BACKEND_BASE_URL } from "../utils/api";
 
 function Cart() {
     const [cart, setCart] = useState(null);
@@ -14,7 +15,7 @@ function Cart() {
     const fetchCart = async () => {
         try {
             setLoading(true);
-            const res = await fetch("http://localhost:5000/api/cart", { credentials: 'include' });
+            const res = await fetch(`${BACKEND_BASE_URL}/api/cart`, { credentials: 'include' });
             if (res.ok) {
                 const data = await res.json();
                 setCart(data.cart);
@@ -76,7 +77,7 @@ function Cart() {
         }
 
         try {
-            const res = await fetch(`http://localhost:5000/api/cart/update/${itemId}`, {
+            const res = await fetch(`${BACKEND_BASE_URL}/api/cart/update/${itemId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -96,7 +97,7 @@ function Cart() {
 
     const handleRemoveItem = async (itemId) => {
         try {
-            const res = await fetch(`http://localhost:5000/api/cart/remove/${itemId}`, {
+            const res = await fetch(`${BACKEND_BASE_URL}/api/cart/remove/${itemId}`, {
                 method: 'DELETE',
                 credentials: 'include',
             });

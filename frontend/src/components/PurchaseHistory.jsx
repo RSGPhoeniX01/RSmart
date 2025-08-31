@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import PurchaseDetailModal from "./PurchaseDetailModal";
+import { BACKEND_BASE_URL } from "../utils/api";
 
 function PurchaseHistory() {
   const [purchases, setPurchases] = useState([]);
@@ -14,7 +15,7 @@ function PurchaseHistory() {
   useEffect(() => {
     const fetchPurchases = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/user/purchases", {
+        const res = await fetch(`${BACKEND_BASE_URL}/api/user/purchases`, {
           credentials: "include",
         });
         if (!res.ok) throw new Error("Failed to fetch purchases");

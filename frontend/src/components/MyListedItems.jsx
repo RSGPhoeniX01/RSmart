@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import { BACKEND_BASE_URL } from "../utils/api";
 
 function MyListedItems() {
   const [items, setItems] = useState([]);
@@ -36,7 +37,7 @@ function MyListedItems() {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/item/seller-items", {
+        const res = await fetch(`${BACKEND_BASE_URL}/api/item/seller-items`, {
           credentials: "include",
         });
         
@@ -136,7 +137,7 @@ function MyListedItems() {
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/item/delete/${itemId}`, {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/item/delete/${itemId}`, {
         method: "DELETE",
         credentials: "include",
       });

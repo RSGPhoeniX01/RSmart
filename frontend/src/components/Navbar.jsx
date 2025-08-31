@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import logo from "../logo/RSmart.png";
 import { FaHeart, FaShoppingCart, FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
 import { createVoiceAssistant } from "../utils/voiceAssistant";
+import { BACKEND_BASE_URL } from "../utils/api";
 
 function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -19,7 +20,7 @@ function Navbar() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/user/me", {
+        const res = await fetch(`${BACKEND_BASE_URL}/api/user/me`, {
           credentials: "include",
         });
         if (res.ok) {
@@ -39,7 +40,7 @@ function Navbar() {
 
     const fetchCartCount = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/cart", {
+        const res = await fetch(`${BACKEND_BASE_URL}/api/cart`, {
           credentials: "include",
         });
         if (res.ok) {

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import { BACKEND_BASE_URL } from "../utils/api";
 
 function Login() {
   const [form, setForm] = useState({
@@ -23,7 +24,7 @@ function Login() {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:5000/api/user/signin", {
+      const res = await fetch(`${BACKEND_BASE_URL}/api/user/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
