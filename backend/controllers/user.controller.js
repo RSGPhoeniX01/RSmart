@@ -43,9 +43,9 @@ const userSchema = z.object({
 // POST /signup - send OTP only
 const sendEmailOtp = async (req, res) => {
     try {
-        const { email, firstName, mobile } = req.body;
-        if (!email || !firstName || !mobile) {
-            return res.status(400).json({ error: "Email, first name, and mobile are required to send OTP." });
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ error: "Email is required to send OTP." });
         }
         // Check if user already exists
         const existingUser = await User.findOne({ email });
@@ -131,7 +131,7 @@ const register = async (req, res) => {
             expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "Strict"
+            sameSite: "None"
         };
         res.cookie("jwt", token, cookieOptions);
         res.status(201).json({ message: "Signup successful. You are now logged in.", token, user: newUser });

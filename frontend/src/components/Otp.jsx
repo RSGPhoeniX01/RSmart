@@ -35,23 +35,13 @@ function Otp({ email, onOtpVerified, onCancel, title = "Verify Email", descripti
       const res = await fetch(`${BACKEND_BASE_URL}/api/user/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          email,
-          firstName: "User", // Default value for profile verification
-          mobile: 1234567890 // Default value for profile verification
-        }),
+        body: JSON.stringify({ email }),
         credentials: "include",
       });
       const data = await res.json();
       
-      // Handle both success and "email already exists" cases
-      if (res.ok || data.error === "Email already exists") {
-        setOtpSent(true);
-        // If it's an existing user, we'll still proceed with OTP verification
-        // The backend will have sent the OTP even if user exists
-      } else {
-        throw new Error(data.error || "Failed to send OTP");
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to send OTP");
+      setOtpSent(true);
     } catch (err) {
       setOtpError(err.message);
     } finally {
@@ -76,14 +66,8 @@ function Otp({ email, onOtpVerified, onCancel, title = "Verify Email", descripti
         credentials: "include",
       });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Invalid OTP");
-      }
-      
-      // OTP verified successfully
-      if (onOtpVerified) {
-        onOtpVerified();
-      }
+      if (!res.ok) throw new Error(data.error || "Invalid OTP");
+      if (onOtpVerified) onOtpVerified();
     } catch (err) {
       setOtpError(err.message);
     } finally {
