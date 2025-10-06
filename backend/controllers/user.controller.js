@@ -27,7 +27,13 @@ const sendOtpEmail = async (to, otp) => {
         text: `Your OTP for email verification is: ${otp}`,
     };
 
-    await transporter.sendMail(mailOptions);
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log("OTP sent to", to);
+    } catch (err) {
+      console.error("Failed to send OTP:", err);
+      throw err; // propagate error so frontend knows
+    }
 };
 
 // Define Zod schema for validation
