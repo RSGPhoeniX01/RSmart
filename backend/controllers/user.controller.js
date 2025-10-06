@@ -325,7 +325,13 @@ const signOut = (req, res) => {
         if(!req.cookies.jwt) {
             return res.status(400).json({ error: "No active session found.Please login" });
         }
-        res.clearCookie('jwt', { httpOnly: true, secure: process.env.NODE_ENV === 'production' });
+        res.clearCookie("jwt", {
+            httpOnly: true,
+            secure: true,
+            sameSite: "None",
+            path: "/"
+          });
+          
         
         // Respond with a success message
         res.status(200).json({ message: "Successfully signed out" });
