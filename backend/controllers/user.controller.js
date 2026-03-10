@@ -12,9 +12,7 @@ dotenv.config(); // Load environment variables from .env file
 // Helper function to send OTP email
 const sendOtpEmail = async (to, otp) => {
     const transporter = nodemailer.createTransport({
-        service: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
+        service: 'gmail',
         auth: {
             user: process.env.EMAIL_USER, // Your email address
             pass: process.env.EMAIL_PASS, // Your email password or app password
