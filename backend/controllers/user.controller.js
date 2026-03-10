@@ -12,7 +12,9 @@ dotenv.config(); // Load environment variables from .env file
 // Helper function to send OTP email
 const sendOtpEmail = async (to, otp) => {
     const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        service: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
         auth: {
             user: process.env.EMAIL_USER, // Your email address
             pass: process.env.EMAIL_PASS, // Your email password or app password
@@ -31,7 +33,7 @@ const sendOtpEmail = async (to, otp) => {
       await transporter.sendMail(mailOptions);
       console.log("OTP sent to", to);
     } catch (err) {
-      console.error("Failed to send OTP:", err);
+      console.error("Failed to send OTP:", err.message, err.code);
       throw err; // propagate error so frontend knows
     }
 };
@@ -70,8 +72,16 @@ const sendEmailOtp = async (req, res) => {
         await sendOtpEmail(email, otp);
         res.status(200).json({ message: "OTP sent to your email." });
     } catch (error) {
-        console.error("Error sending OTP:", error);
-        res.status(500).json({ error: "Internal server error" });
+        console.error("Error sending OTP:", error.message || error);
+        
+        if (error.code === 'EAUTH') {
+            return res.status(500).json({ error: "Email authentication failed. Check EMAIL_USER and EMAIL_PASS." });
+        }
+        if (error.code === 'ESOCKET' || error.code === 'ECONNECTION') {
+            return res.status(500).json({ error: "Unable to connect to email server." });
+        }
+        
+        res.status(500).json({ error: "Failed to send OTP. Please try again later." });
     }
 };
 
