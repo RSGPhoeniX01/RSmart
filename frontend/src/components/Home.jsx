@@ -8,8 +8,6 @@ import { BACKEND_BASE_URL } from "../utils/api";
 
 function Home() {
   const sliderRef = useRef(null);
-  const [sliderWidth, setSliderWidth] = useState(0);
-  const [containerWidth, setContainerWidth] = useState(0);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,19 +107,17 @@ function Home() {
     fetchProducts();
   }, [filters]);
 
+  const [needsMarquee, setNeedsMarquee] = useState(false);
+
   useEffect(() => {
-    const updateWidths = () => {
+    const check = () => {
       if (sliderRef.current) {
-        const sliderWidth = sliderRef.current.scrollWidth;
-        const containerWidth = sliderRef.current.parentElement.clientWidth;
-        setSliderWidth(sliderWidth);
-        setContainerWidth(containerWidth);
+        setNeedsMarquee(sliderRef.current.scrollWidth > sliderRef.current.parentElement.clientWidth);
       }
     };
-
-    updateWidths();
-    window.addEventListener('resize', updateWidths);
-    return () => window.removeEventListener('resize', updateWidths);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, [categories]);
 
   const handleFilterChange = (e) => {
@@ -229,15 +225,14 @@ function Home() {
               <div
                 className="inline-flex gap-8"
                 style={{
-                  width: sliderWidth > containerWidth ? `${sliderWidth * 2}px` : '100%',
-                  animation: sliderWidth > containerWidth
-                    ? `slide-circular ${sliderWidth / 60}s linear infinite`
+                  animation: needsMarquee
+                    ? `marquee-scroll ${categories.length * 3}s linear infinite`
                     : 'none',
-                  justifyContent: sliderWidth <= containerWidth ? 'center' : 'flex-start'
+                  justifyContent: needsMarquee ? 'flex-start' : 'center'
                 }}
                 ref={sliderRef}
               >
-                {(sliderWidth > containerWidth ? [...categories, ...categories] : categories).map((category, idx) => (
+                {(needsMarquee ? [...categories, ...categories] : categories).map((category, idx) => (
                   <div
                     key={idx}
                     className="bg-black bg-opacity-40 rounded-xl shadow-lg p-4 min-w-[180px] flex flex-col items-center hover:scale-105 transition-transform duration-300 cursor-pointer"
